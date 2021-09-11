@@ -40,6 +40,7 @@
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/variant_parser.h"
+#include "core/io/dir_access_hybrid.h"
 
 #include <zlib.h>
 
@@ -283,7 +284,7 @@ bool ProjectSettings::_load_resource_pack(const String &p_pack) {
 	}
 
 	//if data.pck is found, all directory access will be from here
-	DirAccess::make_default<DirAccessPack>(DirAccess::ACCESS_RESOURCES);
+	DirAccess::make_default<DirAccessHybrid>(DirAccess::ACCESS_RESOURCES);
 	using_datapack = true;
 
 	return true;

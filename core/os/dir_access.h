@@ -102,6 +102,14 @@ public:
 	static String get_full_path(const String &p_path, AccessType p_access);
 	static DirAccess *create_for_path(const String &p_path);
 
+	AccessType get_access_type() const {
+		return _access_type;
+	}
+	
+	void set_access_type(AccessType p_access_type) {
+		_access_type = p_access_type;
+	}
+	
 	/*
 	enum DirType {
 
