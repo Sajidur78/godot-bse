@@ -259,8 +259,28 @@ bool ProjectSettings::_load_resource_pack(const String &p_pack) {
 
 	bool ok = PackedData::get_singleton()->add_pack(p_pack) == OK;
 
-	if (!ok)
-		return false;
+	if (!ok) {
+		DirAccess *d = DirAccess::open(p_pack);
+		if (!d)
+			return false;
+
+		d->list_dir_begin();
+
+		String file_path;
+
+		while (!(file_path = d->get_next()).empty()) {
+			if (!file_path.ends_with(".pck")) {
+				continue;
+			}
+
+			ok |= PackedData::get_singleton()->add_pack(file_path) == OK;
+		}
+		
+		d->list_dir_end();
+		
+		if (!ok)
+			return false;
+	}
 
 	//if data.pck is found, all directory access will be from here
 	DirAccess::make_default<DirAccessPack>(DirAccess::ACCESS_RESOURCES);
@@ -321,10 +341,11 @@ Error ProjectSettings::_setup(const String &p_path, const String &p_main_pack, b
 
 	// Attempt with a user-defined main pack first
 
-	if (p_main_pack != "") {
+	bool ok = _load_resource_pack(!p_main_pack.empty() ? p_main_pack : p_path);
 
-		bool ok = _load_resource_pack(p_main_pack);
-		ERR_FAIL_COND_V(!ok, ERR_CANT_OPEN);
+	if (ok) {
+		if (p_main_pack.empty())
+			resource_path = p_path + "/work";
 
 		Error err = _load_settings_text_or_binary("res://project.godot", "res://project.binary");
 		if (err == OK) {

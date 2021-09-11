@@ -47,6 +47,39 @@
 #define S_ISREG(m) ((m)&_S_IFREG)
 #endif
 
+bool create_directory_recursively(const String &directory) {
+	static const String separators(L"/");
+
+	DWORD file_attributes = GetFileAttributesW(directory.c_str());
+	if (file_attributes == INVALID_FILE_ATTRIBUTES) {
+
+		int slash_index = directory.find_last(separators);
+		if (slash_index > 0) {
+			
+			create_directory_recursively(directory.substr(0, slash_index));
+		}
+
+		BOOL result = CreateDirectoryW(directory.c_str(), NULL);
+		if (!result) {
+			
+			return false;
+		}
+
+	} else {
+
+		bool is_directory_or_junction =
+				((file_attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) ||
+				((file_attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0);
+
+		if (!is_directory_or_junction) {
+			
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void FileAccessWindows::check_errors() const {
 
 	ERR_FAIL_COND(!f);
@@ -76,6 +109,10 @@ Error FileAccessWindows::_open(const String &p_path, int p_mode_flags) {
 		mode_string = L"wb+";
 	else
 		return ERR_INVALID_PARAMETER;
+
+	if (p_mode_flags & WRITE) {
+		create_directory_recursively(path.get_base_dir());
+	}
 
 	/* pretty much every implementation that uses fopen as primary
 	   backend supports utf8 encoding */
